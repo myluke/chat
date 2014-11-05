@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Chat Test</title>
+<script type="text/javascript" src="jquery-1.3.2.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+	$.ChatServer();
+	$('.chat_send_text').keydown(function(event){
+		if(event.keyCode==13){
+			$.SendMessage();
+		}
+	});
+	$('.chat_send_button').click(function(){
+		$.SendMessage();
+	});
+	$('[name=chat_send_nickname]').val('游客' + Math.round(Math.random()*10000));
+});
+(function($){
+	$.ChatServer = function(timestamp){
+		timestamp = timestamp||0;
+		$.post('ChatServer.php',{"timestamp":timestamp},function(data){
+			if (data.context != null) {
+				if (data.context.NAME != $('[name=chat_send_nickname]').val()) {
+					$('.chat_context').ViewMessage(data.context);
+				}
+			}
+			$.ChatServer(data.timestamp);
+		},'json');
+	}
+	$.SendMessage = function(){
+		var nickname = $('[name=chat_send_nickname]').val();
+		var context  = $('[name=chat_send_text]').val(); $('[name=chat_send_text]').val('');
+		$.post('ChatServer.php',{"action":"SendMessage","nickname":nickname,"context":context},function(data){
+			$('.chat_context').ViewMessage(data);
+		},'json');
+	}
+	$.fn.ViewMessage = function(data){
+		if (data.CODE==200) {
+			this.append('<p>[' + data.NAME + '] Say: ' + data.TEXT.replace(/</g,'&lt;').replace(/>/g,'&gt;') + ' <em>' + data.TIME + '</em></p>');
+			this.get(0).scrollTop = this.get(0).scrollHeight + 20;
+		}
+	}
+})(jQuery);
+</script>
+<style type="text/css">
+body,p,div{ font-size:12px; }
+#chat{ width:500px; border:solid 1px #666666; }
+#chat .chat_context{ width:100%; height:300px; overflow:auto; padding:5px; }
+#chat .chat_context p{ padding:0; margin:3px 0;}
+#chat .chat_context p em{ font-size:9px; color:#999999; }
+#chat .chat_send{ width:100%; padding-left:5px; height:30px; background:#CACACA; line-height:30px; }
+#chat .chat_send_nickname,
+#chat .chat_send_text{ border:solid 1px #7F9DB9; padding:2px; }
+#chat .chat_send_button{ width:100px; height:23px; line-height:23px; border:solid 1px #999999; vertical-align:middle; margin:0 6px; }
+</style>
+</head>
+
+<body>
+<div id="chat">
+	<div class="chat_context"></div>
+	<div class="chat_send"><input type="text" size="8" name="chat_send_nickname" value="游客"/>:<input type="text" size="40" name="chat_send_text" class="chat_send_text" /><button type="button" class="chat_send_button">发送</button></div>
+</div>
+</body>
+</html>
